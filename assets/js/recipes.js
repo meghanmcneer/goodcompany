@@ -53,7 +53,7 @@
       '<button class="btn edit-only" data-paste><span class="plus">+</span> paste a link</button></div>' +
       '<div class="toolbar"><label class="search">' + icons.search + '<input placeholder="search the recipe box" id="q"></label><span class="count-note">' + list.length + " recipes</span></div>" +
       '<div class="cards">' + list.map(card).join("") + "</div>" +
-      (editing ? "" : '<p class="hint" style="margin-top:40px;color:var(--muted)">Adding recipes happens in edit mode.</p>') + "</div>";
+      (editing ? "" : '<p class="edit-nudge"><button type="button" class="btn ghost" data-start-edit>+ add a recipe</button><span>opens edit mode, where you can paste links, add photos and plan</span></p>') + "</div>";
   }
 
   function openLib(i) {

@@ -47,11 +47,11 @@
     });
     return out;
   }
-  function editForm({ eyebrow, title, hint, fields, values, onSave, onDelete }) {
+  function editForm({ eyebrow, title, hint, fields, values, onSave, onDelete, deleteLabel }) {
     open(top(eyebrow, title) + (hint ? '<p class="hint">' + esc(hint) + "</p>" : "") +
       '<form class="gc-form">' + form(fields, values) +
       '<div class="modal-actions"><button class="btn" type="submit">save it</button><button class="btn ghost" type="button" data-close>cancel</button>' +
-      (onDelete ? '<button class="del" type="button">remove</button>' : "") + "</div></form>", (m) => {
+      (onDelete ? '<button class="del" type="button">' + esc(deleteLabel || "remove") + "</button>" : "") + "</div></form>", (m) => {
       fields.filter((f) => f.preview).forEach((f) => {
         const sel = m.querySelector('[name="' + f.k + '"]'); const im = m.querySelector('.pick-preview[data-for="' + f.k + '"]');
         const show = () => { const pv = f.preview[sel.value]; im.src = pv ? pv.src : ""; im.classList.toggle("empty", !pv); };
@@ -64,7 +64,7 @@
         fields.filter((f) => f.fallback).forEach((f) => { if (!v[f.k]) v[f.k] = (f.guess && f.guess(v[f.guessFrom])) || f.fallback; });
         onSave(v); close();
       });
-      const d = m.querySelector(".del"); if (d) d.addEventListener("click", () => { if (confirm("Remove this?")) { onDelete(); close(); } });
+      const d = m.querySelector(".del"); if (d) d.addEventListener("click", () => { if (deleteLabel) { close(); onDelete(); } else if (confirm("Remove this?")) { onDelete(); close(); } });
     });
   }
 

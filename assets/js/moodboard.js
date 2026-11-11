@@ -27,7 +27,7 @@
             '<h3 class="hed">' + esc(s.title) + "</h3><p>" + esc(s.note || "") + "</p>" +
             '<div class="foot">' + (s.source ? '<a class="arrow-link" href="' + esc(s.source) + '" target="_blank" rel="noopener" style="margin-left:0">open the original ' + icons.ne + "</a>" : "") +
             (s.from ? '<span class="serve-chip ice" style="margin-left:auto">' + esc(s.from) + "</span>" : "") + "</div></div></article>").join("") + "</div>"
-        : '<p class="empty">Nothing pinned yet.' + (editing ? "" : " Turn on edit mode to add things.") + "</p>") +
+        : '<p class="empty">Nothing pinned yet.' + (editing ? "" : ' <button type="button" class="text-btn" data-start-edit>+ pin something</button>') + "</p>") +
       "</div>";
   }
 

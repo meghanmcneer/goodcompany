@@ -92,16 +92,16 @@
     const counts = (d) => (D.byDate[d.iso] || []).length;
     return '<div class="wrap">' +
       '<section class="g-hero" style="background-image:url(\'' + esc(img(g.heroImage)) + '\')">' + GC.pencil(P + ".heroImage", "hero") +
-      '<span class="edit-gathering edit-only"><button class="btn outline-light" data-add="gathering">edit gathering ' + icons.ne + "</button></span>" +
       '<div class="g-hero-inner"><p class="eyebrow">Gathering No. ' + esc(g.number) + ' <i class=ast></i></p>' +
       '<h1 class="hed">' + esc(g.title) + "</h1>" + icons.swoosh +
       '<div class="facts"><span>' + esc(g.dates) + '</span><span class="dot">·</span><span>' + esc(g.people) + ' people</span><span class="dot">·</span><span>' + esc(g.status) + "</span></div></div>" +
       '<div class="caption" contenteditable="plaintext-only" spellcheck="false" data-caption data-ph="write a line about it" title="click to change">' + esc(heroCaption()) + "</div></section>" +
 
-      '<div class="glance"><div class="glance-title"><p class="eyebrow">The plan at a glance</p><h2 class="hed">' + g.days.length + ' days, <em>one good idea.</em></h2>' +
+      '<div class="glance"><div class="glance-title"><p class="eyebrow">The plan at a glance</p><h2 class="hed">' + g.days.length + (g.days.length === 1 ? " day, " : " days, ") + '<em>' + field(P + ".glanceLine", g.glanceLine == null ? "one good idea." : g.glanceLine, "one good idea.") + "</em></h2>" +
       '<div class="day-tiles">' + g.days.map((d) => '<a class="day-tile' + (d.feature ? " feature" : "") + '" href="#itinerary" data-jump="day-' + d.id + '"><span class="count">' + counts(d) + '</span><div class="dow">' + esc(d.short.toUpperCase()) + '</div><div class="num">' + esc(d.num) + "</div><div>" + esc(d.label) + "</div></a>").join("") + "</div></div>" +
       '<div><div class="sticky-scrawl">save room for dessert ↘</div><div class="sticky"><span class="tape"></span><h3 class="hed">the big picture</h3><ul class="checklist">' +
-      g.bigPicture.map((b, i) => '<li><button class="check' + (b.done ? " on" : "") + '" data-big="' + i + '" aria-label="toggle"></button>' + esc(b.text) + "</li>").join("") + "</ul></div></div></div>" +
+      g.bigPicture.map((b, i) => '<li class="big-item' + (b.done ? " done" : "") + '"><button class="check' + (b.done ? " on" : "") + '" data-big="' + i + '" aria-label="check off"></button>' + field(P + ".bigPicture." + i + ".text", b.text, "something to do") + '<button type="button" class="big-x" data-big-remove="' + i + '" aria-label="remove">×</button></li>').join("") +
+      '</ul><button type="button" class="text-btn big-add" data-big-add>+ add to the big picture</button></div></div></div>' +
 
       kitchenTeaser(D) +
 
@@ -143,18 +143,57 @@
           : ds.length && !e.at ? '<span class="run-link muted">give this meal a time to build the kitchen countdown</span>' : "");
     }
     const attrs = e.idx != null ? ' data-agenda="' + e.dayId + ":" + e.idx + '"' : e.activity ? ' data-activity-id="' + esc(e.activity) + '"' : "";
-    return '<div class="run-row tone-' + tone + " k-" + e.kind + (e.idx != null ? " editable" : "") + '"' + attrs + '><div class="run-time">' + esc(time) + '</div><div class="run-body"><p class="eyebrow">' + esc(label) + '</p><h4 class="hed">' + esc(e.text) + "</h4>" + sub + "</div></div>";
+    const x = e.idx != null ? '<button type="button" class="row-x" data-remove-item="' + e.dayId + ":" + e.idx + '" title="remove">×</button>' : e.activity ? '<button type="button" class="row-x" data-unschedule="' + esc(e.activity) + '" title="take off this day">×</button>' : "";
+    return '<div class="run-row tone-' + tone + " k-" + e.kind + (e.idx != null ? " editable" : "") + '"' + attrs + '><div class="run-time">' + esc(time) + '</div><div class="run-body"><p class="eyebrow">' + esc(label) + '</p><h4 class="hed">' + esc(e.text) + "</h4>" + sub + "</div>" + x + "</div>";
   }
   function itinerary(D) {
     return '<div class="wrap"><div class="page-head"><div><p class="eyebrow">' + esc(g.place) + ' <span style="color:var(--neon)">·</span> ' + esc(g.datesLong) + '</p><h1 class="hed">' + esc(g.title) + '</h1><p class="lede">' + esc(g.subtitle) + "</p></div>" +
       '<button class="btn ghost edit-only" data-add="gathering">edit gathering</button></div>' +
       '<div class="page-head" style="border-top:1px solid var(--line);padding-top:36px"><div><p class="eyebrow">' + g.days.length + ' days, loosely held</p><h2 style="font-size:40px;font-weight:400;margin:0">The Itinerary</h2>' +
       '<p class="lede" style="font-size:16px">The run of show: arrivals, meals, plans. The cooking lives in <a href="#kitchen">the Kitchen</a>.</p></div>' + addBtn("add to the plan", "agenda") + "</div>" +
-      '<div class="run">' + g.days.map((d, i) => {
+      '<div class="run"><button type="button" class="add-day" data-add-day="before">+ add a day before</button>' + g.days.map((d, i) => {
         const list = D.byDate[d.iso] || [];
-        return '<section class="run-day' + (d.feature ? " feature" : "") + '" id="day-' + d.id + '"><header class="run-day-head"><span class="pin">' + two(i + 1) + '</span><div><p class="eyebrow">' + esc(d.dow) + '</p><h3 class="hed">' + esc(d.date) + "</h3></div>" + (d.note ? '<span class="note">' + esc(d.note) + "</span>" : "") + "</header>" +
-          (list.length ? list.map(runRow).join("") : '<p class="empty">nothing planned, which is also a plan</p>') + "</section>";
-      }).join("") + "</div></div>";
+        return '<section class="run-day' + (d.feature ? " feature" : "") + '" id="day-' + d.id + '"><header class="run-day-head"><span class="pin">' + two(i + 1) + '</span><div><p class="eyebrow">' + esc(d.dow) + '</p><h3 class="hed">' + esc(d.date) + "</h3></div>" + (d.note ? '<span class="note">' + esc(d.note) + "</span>" : "") + '<button type="button" class="day-x" data-remove-day="' + esc(d.id) + '" title="remove this day">×</button></header>' +
+          (list.length ? list.map(runRow).join("") : '<p class="empty">nothing planned, which is also a plan</p>') +
+          '<button type="button" class="add-to-day" data-add-to-day="' + esc(d.id) + '">+ add to ' + esc(d.dow) + "</button></section>";
+      }).join("") + '<button type="button" class="add-day" data-add-day="after">+ add a day after</button></div></div>';
+  }
+
+  /* ---------- days: add before/after, remove; keep the date labels in sync ---------- */
+  function dayFrom(d, idx) {
+    return { id: "d" + uid(), iso: d.toISOString().slice(0, 10), dow: d.toLocaleDateString("en-US", { weekday: "long" }), short: d.toLocaleDateString("en-US", { weekday: "short" }),
+      date: d.toLocaleDateString("en-US", { month: "long", day: "numeric" }), num: String(d.getDate()), title: "Day " + (idx + 1), label: "", note: "", items: [] };
+  }
+  function syncDates() {
+    if (!g.days.length) return;
+    const s = new Date(g.days[0].iso + "T12:00:00"), e = new Date(g.days[g.days.length - 1].iso + "T12:00:00");
+    const md = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }), long = (d) => d.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+    const one = g.days.length === 1;
+    g.dates = one ? md(s) + ", " + e.getFullYear() : md(s) + " — " + md(e) + ", " + e.getFullYear();
+    g.datesLong = one ? long(s) + ", " + e.getFullYear() : long(s) + " — " + long(e) + ", " + e.getFullYear();
+  }
+  function addDay(where) {
+    const ref = where === "before" ? g.days[0] : g.days[g.days.length - 1];
+    const d = new Date(ref.iso + "T12:00:00"); d.setDate(d.getDate() + (where === "before" ? -1 : 1));
+    const nd = dayFrom(d, g.days.length);
+    if (where === "before") g.days.unshift(nd); else g.days.push(nd);
+    syncDates(); save(nd.dow + ", " + nd.date + " added.");
+    setTimeout(() => { const el = document.getElementById("day-" + nd.id); if (el) el.scrollIntoView({ behavior: "smooth", block: "center" }); }, 80);
+  }
+  function removeDay(id) {
+    if (g.days.length === 1) return toast("A gathering needs at least one day.");
+    const i = g.days.findIndex((d) => d.id === id); const d = g.days[i];
+    const busy = (d.items || []).length + g.activities.filter((a) => a.day === id).length;
+    if (!confirm("Remove " + d.dow + ", " + d.date + (busy ? "? Its " + busy + " plan" + (busy > 1 ? "s" : "") + " go with it." : "?"))) return;
+    (d.items || []).forEach((it) => { if (it.kind === "meal" && it.id) g.recipes.forEach((r) => { if (r.meal === it.id) r.meal = ""; }); });
+    g.activities.forEach((a) => { if (a.day === id) delete a.day; });
+    g.days.splice(i, 1); syncDates(); save("Day removed.");
+  }
+  function removeGathering() {
+    if (!confirm("Delete " + g.title + " entirely? Its itinerary, recipes, activities, people and photos go with it. Recipes and ideas stay in the Recipe Box and Activity Ideas.")) return;
+    GC.onChange = () => {}; // nothing left to draw here
+    data.gatherings.splice(gIndex, 1); save();
+    location.href = "plan.html#gatherings";
   }
 
   /* ---------- KITCHEN: one countdown per meal ---------- */
@@ -235,7 +274,7 @@
             "<figcaption>" + (editing ? '<span class="inline-edit" contenteditable="plaintext-only" spellcheck="false" data-field="' + esc(P + ".photos." + i + ".caption") + '" data-ph="add a caption">' + esc(ph.caption || "") + "</span>" : esc(ph.caption || "")) + "</figcaption>" +
             (editing ? '<button type="button" class="snap-x" data-photo-remove="' + i + '" aria-label="remove photo">×</button>' : "") + "</figure>").join("") +
           (editing ? '<button type="button" class="snap snap-add" data-add-photos><span>+</span>add more</button>' : "") + "</div>"
-        : '<div class="snaps-empty"><p class="hed">nothing here yet</p><p>After the gathering, add the good ones here.' + (editing ? "" : " Turn on edit mode to add photos.") + "</p>" + (editing ? '<button class="btn" data-add-photos>' + plus + " add photos from the day</button>" : "") + "</div>") +
+        : '<div class="snaps-empty"><p class="hed">nothing here yet</p><p>After the gathering, add the good ones here.' + "</p>" + (editing ? '<button class="btn" data-add-photos>' + plus + " add photos from the day</button>" : '<button class="btn" data-start-edit>' + plus + " add photos from the day</button>") + "</div>") +
       "</div>";
   }
   async function addPhotos() {
@@ -489,8 +528,17 @@
     const chk = t.closest("[data-check]");
     if (chk) { const c = getChecks(); c[chk.dataset.check] = !c[chk.dataset.check]; localStorage.setItem(CHECK_KEY, JSON.stringify(c)); render(); return; }
     const big = t.closest("[data-big]");
-    if (big) { if (!editing) return toast("Add ?edit to the address to change the plan."); const b = g.bigPicture[+big.dataset.big]; b.done = !b.done; save(); return; }
+    if (big) { const b = g.bigPicture[+big.dataset.big]; b.done = !b.done; save(); return; }
+    const bx = t.closest("[data-big-remove]"); if (bx) { g.bigPicture.splice(+bx.dataset.bigRemove, 1); save("Removed."); return; }
+    if (t.closest("[data-big-add]")) { g.bigPicture.push({ text: "", done: false }); save();
+      setTimeout(() => { const f = document.querySelectorAll('[data-field$=".text"][data-field*=".bigPicture."]'); const el = f[f.length - 1]; if (el) el.focus(); }, 60); return; }
     if (t.closest(".pencil, .made-it, a.src, a.arrow-link[target], [data-field]")) return;
+    const ad = t.closest("[data-add-day]"); if (ad) return addDay(ad.dataset.addDay);
+    const rd = t.closest("[data-remove-day]"); if (rd) return removeDay(rd.dataset.removeDay);
+    const atd = t.closest("[data-add-to-day]"); if (atd) return editAgenda(atd.dataset.addToDay, null);
+    const ri = t.closest("[data-remove-item]"); if (ri) { const [dId, idx] = ri.dataset.removeItem.split(":"); const d = dayById(dId); const it = d.items[+idx];
+      if (confirm("Remove " + it.title + "?")) { const gone = d.items.splice(+idx, 1)[0]; if (gone && gone.id) g.recipes.forEach((r) => { if (r.meal === gone.id) r.meal = ""; }); save("Removed."); } return; }
+    const un = t.closest("[data-unschedule]"); if (un) { const a = g.activities.find((x) => x.id === un.dataset.unschedule); if (a) { delete a.day; save(a.title + " is off the itinerary. It's still in Activities."); } return; }
     if (t.closest("[data-new-person]")) return newPerson();
     if (t.closest("[data-add-photos]")) return addPhotos();
     const pr = t.closest("[data-photo-remove]"); if (pr) { if (confirm("Remove this photo from the scrapbook?")) { g.photos.splice(+pr.dataset.photoRemove, 1); save("Removed."); } return; }
@@ -505,7 +553,7 @@
       if (k === "agenda") return editAgenda(null, null);
       if (k === "meal") { editAgenda(null, null); const sel = document.querySelector('.modal [name="kind"]'); if (sel) sel.value = "meal"; return; }
       if (k === "guest") return newPerson();
-      if (k === "gathering") return UI.editForm({ eyebrow: "Good Company", title: "edit gathering", fields: fields("gathering"), values: g, onSave: (v) => { Object.assign(g, v); save("Saved."); } });
+      if (k === "gathering") return UI.editForm({ eyebrow: "Good Company", title: "edit gathering", hint: "Add or remove days on the Itinerary.", fields: fields("gathering").filter((f) => f.k !== "dates" && f.k !== "datesLong"), values: g, onSave: (v) => { Object.assign(g, v); save("Saved."); }, onDelete: removeGathering, deleteLabel: "delete this gathering" });
       if (k === "activity") return addActivity();
       const lists = { activity: g.activities, market: g.market, guest: g.guests };
       return editThing(k, lists[k], null);

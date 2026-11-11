@@ -50,8 +50,8 @@
       '<p class="lede">Crafts, walks, games, grand plans. Keep every good idea here, then add it to a gathering when the moment is right.</p></div>' +
       (editing ? '<button class="btn" data-new-idea><span class="plus">+</span> add an idea</button>' : "") + "</div>" +
       '<div class="toolbar"><label class="search">' + icons.search + '<input placeholder="search activity ideas" id="q"></label><span class="count-note">' + list.length + (list.length === 1 ? " idea" : " ideas") + "</span></div>" +
-      (list.length ? '<div class="cards">' + list.map(card).join("") + "</div>" : '<p class="empty">No ideas yet.' + (editing ? "" : " Turn on edit mode to add some.") + "</p>") +
-      (editing ? "" : '<p class="hint" style="margin-top:40px;color:var(--muted)">Adding ideas happens in edit mode.</p>') + "</div>";
+      (list.length ? '<div class="cards">' + list.map(card).join("") + "</div>" : '<p class="empty">No ideas yet.' + "" + "</p>") +
+      (editing ? "" : '<p class="edit-nudge"><button type="button" class="btn ghost" data-start-edit>+ add an idea</button><span>opens edit mode, where you can add ideas, photos and plans</span></p>') + "</div>";
   }
 
   const FIELDS = () => [

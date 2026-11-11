@@ -17,7 +17,8 @@
     if (qs.get("edit") === "off") localStorage.removeItem(EDIT_KEY);
     else localStorage.setItem(EDIT_KEY, "1");
   }
-  const editing = localStorage.getItem(EDIT_KEY) === "1";
+  // everything is always editable (except the sign-up screen) — no view mode
+  const editing = !document.body.classList.contains("welcome");
 
   const clone = (o) => JSON.parse(JSON.stringify(o));
   let draft = null;
@@ -267,11 +268,10 @@
     document.body.classList.add("editing");
     const bar = document.createElement("div");
     bar.className = "editbar";
-    bar.innerHTML = '<span class="lbl">editing</span><span class="status"></span>' +
+    bar.innerHTML = '<span class="lbl">your changes</span><span class="status"></span>' +
       '<button class="go" data-act="export">export for GitHub</button>' +
       '<button data-act="type">type</button>' +
-      '<button data-act="discard">discard edits</button>' +
-      '<button data-act="exit">exit</button>';
+      '<button data-act="discard">discard edits</button>';
     bar.addEventListener("click", (e) => {
       const act = e.target.dataset.act;
       if (act === "export") exportForGitHub();
@@ -284,7 +284,9 @@
   }
   function updateBar() {
     const s = document.querySelector(".editbar .status"); if (!s) return;
-    s.textContent = changedCount() ? "unpublished changes" : "nothing changed yet";
+    const n = changedCount();
+    s.textContent = n ? "saved on this device · not on the live site yet" : "";
+    document.body.classList.toggle("has-changes", !!n);
   }
 
   // ---------- pencils: any button.pencil[data-path] ----------
@@ -317,19 +319,13 @@
   }
   // a visible button when you're running the beta file from your computer
   function editToggle() {
-    if (editing || !/^(file:|http:\/\/(localhost|127\.0\.0\.1))/.test(location.href)) return;
+    if (editing || document.body.classList.contains("welcome")) return;
     const b = document.createElement("button");
     b.className = "edit-toggle"; b.type = "button";
     b.innerHTML = icons.pencil + "<span>edit photos &amp; details</span>";
     b.addEventListener("click", () => setEditing(true));
     document.body.appendChild(b);
   }
-  // shift + E toggles edit mode anywhere (works on the live site too, without a button)
-  document.addEventListener("keydown", (e) => {
-    if (e.key !== "E" || !e.shiftKey || e.metaKey || e.ctrlKey) return;
-    if (e.target.closest && e.target.closest("input, textarea, select, [contenteditable]")) return;
-    setEditing(!editing);
-  });
   // while editing, clicking anywhere on a photo opens the upload
   document.addEventListener("click", (e) => {
     if (!editing || e.target.closest(".pencil, .made-it, a, button, [data-field], [contenteditable]")) return;
@@ -344,5 +340,6 @@
     getPath, setPath, pickImage, pickImages, ready: null,
     set onChange(fn) { onChange = fn; }
   };
-  window.GC.ready = loadImages().then(buildBar).then(editToggle);
+  document.addEventListener("click", (e) => { if (e.target.closest("[data-start-edit]")) { e.preventDefault(); setEditing(true); } });
+  window.GC.ready = loadImages().then(buildBar);
 })();

@@ -1068,3 +1068,37 @@ body.landing .marquee { position: relative; z-index: 2; }
   .logo .word { font-size: calc(40px * var(--hed-scale, 1)); }
 }
 @media (max-width: 720px) { .site-nav { gap: 0; justify-content: space-between; flex-wrap: nowrap; } .site-nav a { font-size: 10px; letter-spacing: .06em; } }
+.edit-nudge { margin-top: 40px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 15px; }
+/* always editable: keep the changes bar small and out of the way */
+.editbar { padding: 6px 6px 6px 16px; gap: 8px; font-size: 12px; }
+.editbar .lbl { font-size: 18px; }
+.editbar button { padding: 8px 12px; font-size: 12px; }
+.edit-toggle { display: none !important; }
+
+body.editing .editbar { display: none; }
+body.editing.has-changes .editbar { display: flex; }
+
+/* itinerary: add/remove days and items */
+.add-day { display: block; width: 100%; border: 2px dashed var(--orange-soft); background: transparent; color: var(--orange); font-weight: 700; font-size: 14px; letter-spacing: .1em; text-transform: uppercase; padding: 14px; margin: 0 0 36px; }
+.add-day:hover { border-color: var(--neon); color: var(--neon); background: rgba(255,90,18,.04); }
+.run .add-day:last-child { margin: 10px 0 0; }
+.run-day-head { position: relative; }
+.day-x, .row-x { border: 1.5px solid var(--line); background: var(--cream); width: 32px; height: 32px; border-radius: 50%; font-size: 18px; line-height: 1; color: var(--muted); flex: none; }
+.day-x { position: absolute; right: 0; top: 50%; transform: translateY(-50%); }
+.day-x:hover, .row-x:hover { background: var(--neon); color: #fff; border-color: var(--neon); }
+.run-row { position: relative; }
+.row-x { position: absolute; right: 8px; top: 16px; opacity: 0; transition: opacity .15s; }
+.run-row:hover .row-x { opacity: 1; }
+@media (hover: none) { .row-x { opacity: 1; } }
+.add-to-day { border: 0; background: none; color: var(--orange); font-weight: 700; font-size: 13px; letter-spacing: .08em; padding: 14px 0 0 126px; }
+.add-to-day:hover { color: var(--neon); }
+@media (max-width: 720px) { .add-to-day { padding-left: 86px; } }
+/* the big picture: editable, check-off-able */
+.checklist li.big-item { position: relative; padding-right: 30px; }
+.checklist li.big-item .inline-edit { flex: 1; border-bottom-color: transparent; }
+.checklist li.big-item .inline-edit:hover, .checklist li.big-item .inline-edit:focus { border-bottom-color: var(--neon); }
+.checklist li.big-item.done .inline-edit { text-decoration: line-through; text-decoration-color: var(--neon); opacity: .6; }
+.big-x { position: absolute; right: 0; border: 0; background: none; font-size: 20px; line-height: 1; color: var(--muted); opacity: 0; transition: opacity .15s; }
+.big-item:hover .big-x { opacity: 1; } .big-x:hover { color: var(--neon); }
+@media (hover: none) { .big-x { opacity: .6; } }
+.big-add { padding-top: 10px; }

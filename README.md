@@ -17,24 +17,15 @@ In The Company tab, edit mode lets you search friends' profiles and add them as 
 
 Right now profiles live in each person's browser, so friends you can find are anyone who made a profile on the same device. Making profiles shared between people needs a small backend (Supabase or Firebase, both free to start). Everything in `assets/js/auth.js` is set up to swap that in. Profiles are never included in "export for GitHub," so emails don't end up public.
 
-## Editing (pencils, recipes, the plan)
+## Editing
 
-Add `?edit` to the end of any page address, for example:
-`https://YOUR-USERNAME.github.io/good-company/gathering.html?edit`
+Everything is editable for anyone who's signed in: gatherings, recipes, activities, people, photos and the mood board. Click a pencil to swap a photo, click text to change it, and use the + buttons to add things.
 
-Edit mode turns on these tools:
-- **Pencils** on every image let you upload a new photo.
-- **Add buttons** for recipes, activities, scrapbook links, market items, guests and itinerary items.
-- **Paste a link** in the Recipe Box pulls in the title, photo, ingredients and steps.
-- **Recipe drawers** let you set a serve day and time (this builds the prep timeline and oven plan) and leave a star rating and notes on how it went.
+Changes save on that person's device right away. Once something has changed, a small bar appears at the bottom:
 
-Edits are saved in your browser first, so nothing goes public by accident. To publish:
-
-1. Click **export for GitHub** in the bar at the bottom. It downloads `good-company-update.zip`.
-2. Unzip it. On GitHub, open the repo, click **Add file → Upload files**, drag in the `assets` and `images` folders from the zip, and commit.
-3. Once that's live, click **discard edits** in the edit bar so your browser shows the published version again.
-
-Click **exit** to leave edit mode. Visitors never see the pencils.
+- **export for GitHub** downloads `good-company-update.zip`. Unzip it, then on GitHub open the repo, click **Add file → Upload files**, drag in the `assets` and `images` folders, and commit. A minute later the changes are live for everyone.
+- **type** adjusts tracking and spacing.
+- **discard edits** clears this device's changes and shows the live version again.
 
 ## How the kitchen math works
 
