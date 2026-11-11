@@ -86,6 +86,7 @@
     { id: "appetizer", label: "Appetizer", src: "images/stickers/appetizer.webp" },
     { id: "bread", label: "Bread", src: "images/stickers/bread.webp" },
     { id: "breakfast", label: "Breakfast", src: "images/stickers/breakfast.webp" },
+    { id: "pasta", label: "Pasta", src: "images/stickers/pasta.webp" },
     { id: "cheese-board", label: "Cheese board", src: "images/stickers/cheese-board.webp" },
     { id: "cocktail", label: "Cocktail", src: "images/stickers/cocktail.webp" },
     { id: "coffee", label: "Coffee", src: "images/stickers/coffee.webp" },
@@ -114,14 +115,19 @@
     ["meat-entree", /turkey|chicken|beef|steak|pork|lamb|ham|brisket|duck|meatball|sausage|ribs/],
     ["appetizer", /dip|deviled|crostini|bruschetta|tartlet|canap|appetizer|stuffed mushroom/], ["snack", /popcorn|nuts|snack|cracker|chips|trail mix/],
     ["side", /potato|gratin|mash|stuffing|casserole|roasted|green beans|carrot|brussels|squash|rice|beans/],
-    ["vegetarian-entree", /lasagna|risotto|curry|pasta|tofu|eggplant|vegetarian|veggie|quiche/]
+    ["pasta", /pasta|rigatoni|spaghetti|linguine|fettuccine|penne|orecchiette|bucatini|tagliatelle|pappardelle|lasagna|gnocchi|ravioli|tortellini|carbonara|cacio e pepe|bolognese|mac and cheese|macaroni|noodle|orzo/],
+    ["vegetarian-entree", /risotto|curry|tofu|eggplant|vegetarian|veggie|quiche/]
   ];
   // the dish is usually the last thing named before "with": "chicken soup" → soup, "maple glazed turkey with gravy" → turkey
   function bestGuess(list, title) {
     const t = String(title || "").toLowerCase().split(/\s+with\s+|\s+and\s+|,/)[0];
     let best = "", at = -1;
     list.forEach(([id, re]) => { const g = new RegExp(re.source, "g"); let m; while ((m = g.exec(t))) { const end = m.index + m[0].length; if (end > at) { at = end; best = id; } if (!m[0].length) g.lastIndex++; } });
-    return best || (t !== String(title || "").toLowerCase() ? bestGuess(list, String(title).toLowerCase().replace(/^.*?\s+with\s+/, "")) : "");
+    if (best) return best;
+    // nothing in the first part: look at the whole title once
+    const all = String(title || "").toLowerCase(); let at2 = -1;
+    list.forEach(([id, re]) => { const g = new RegExp(re.source, "g"); let m; while ((m = g.exec(all))) { const end = m.index + m[0].length; if (end > at2) { at2 = end; best = id; } if (!m[0].length) g.lastIndex++; } });
+    return best;
   }
   const guessCategory = (title) => bestGuess(GUESS, title);
 

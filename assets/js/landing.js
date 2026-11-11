@@ -137,7 +137,7 @@
   function gatherings() {
     const el = document.querySelector("#gathering-grid"); if (!el) return;
     el.innerHTML = data.gatherings.map((g, gi) =>
-      '<a class="g-card" href="gathering.html?g=' + esc(g.id) + '"><div class="img" style="background-image:url(\'' + esc(img(g.cardImage || g.heroImage)) + '\')"><span class="badge neon">No. ' + esc(g.number) + "</span>" + '<span class="kind-tags">' + (g.kind || []).map((k) => "<i>" + esc({ meal: "meal", trip: "trip", together: "get-together" }[k] || k) + "</i>").join("") + "</span>" + GC.pencil("gatherings." + gi + ".cardImage", g.id + "-card") + "</div>" +
+      '<a class="g-card" href="gathering.html?g=' + esc(g.id) + '"><div class="img" style="background-image:url(\'' + esc(img(g.cardImage || g.heroImage)) + '\')"><span class="badge neon">No. ' + esc(g.number) + "</span>"  + GC.pencil("gatherings." + gi + ".cardImage", g.id + "-card") + "</div>" +
       '<div class="body"><p class="eyebrow orange">' + esc(g.place) + " · " + esc(g.status) + '</p><h3 class="hed">' + esc(g.title) + '</h3><p style="margin:10px 0 0;color:var(--muted)">' + esc(g.subtitle) + '</p><div class="meta">' + esc(g.dates) + " · " + esc(g.people) + " people</div></div></a>").join("") +
       (GC.editing ? '<button type="button" class="g-card soon" data-new-gathering><div><p class="eyebrow ice">No. ' + String(data.gatherings.length + 1).padStart(3, "0") + '</p><h3 class="hed">+ add a gathering</h3><p style="color:var(--ice-deep);max-width:300px;margin:12px auto 0">A meal, a trip, or a get-together. Pick the dates and the days build themselves.</p></div></button>' : "") +
       (GC.editing ? "" : '<a class="g-card soon" href="recipes.html"><div><p class="eyebrow ice">No. ' + String(data.gatherings.length + 1).padStart(3, "0") + ' · up next</p><h3 class="hed">the next long table</h3><p style="color:var(--ice-deep);max-width:300px;margin:12px auto 0">Until then, the Recipe Box is where the good ones wait. ' + icons.ne + "</p></div></a>");
@@ -185,6 +185,16 @@
   }
   document.addEventListener("click", (e) => { if (e.target.closest("[data-new-gathering]")) newGathering(); });
 
+  // the orange squiggle matches the headline's real width, even when it wraps
+  function fitSquiggle() {
+    const h = document.querySelector(".landing-hero h1"), sq = document.querySelector(".squiggle.full"); if (!h || !sq) return;
+    const rg = document.createRange(); rg.selectNodeContents(h);
+    const rects = [...rg.getClientRects()]; if (!rects.length) return;
+    sq.style.width = Math.round(Math.max(...rects.map((r) => r.right)) - h.getBoundingClientRect().left) + "px";
+  }
+  window.addEventListener("resize", fitSquiggle);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitSquiggle);
+
   GC.onChange = () => { render(); gatherings(); };
-  GC.ready.then(() => { render(); gatherings(); });
+  GC.ready.then(() => { render(); gatherings(); fitSquiggle(); });
 })();

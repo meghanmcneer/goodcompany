@@ -96,6 +96,7 @@
     document.querySelectorAll(".card").forEach((c) => (c.style.display = !q || c.dataset.search.includes(q) ? "" : "none"));
   });
 
+  document.addEventListener("toggle", (e) => { const d = e.target; if (!d.matches || !d.matches("details.g-menu")) return; const c = d.closest(".card"); if (c) c.classList.toggle("menu-open", d.open); }, true);
   GC.onChange = render;
   GC.ready.then(() => {
     render();

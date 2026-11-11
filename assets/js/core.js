@@ -180,9 +180,11 @@
     if (msg) toast(msg);
     onChange();
   }
+  const PUB_KEY = "gc-exported";
   function changedCount() {
     const a = JSON.stringify(BASE), b = JSON.stringify(data);
     if (a === b) return 0;
+    try { if (localStorage.getItem(PUB_KEY) === b) return 0; } catch (e) {} // already exported, waiting on GitHub
     return [...blobs.keys()].filter((p) => b.includes(p)).length || 1;
   }
 
@@ -240,6 +242,8 @@
     a.href = URL.createObjectURL(makeZip(files));
     a.download = "good-company-update.zip";
     document.body.appendChild(a); a.click(); a.remove();
+    try { localStorage.setItem(PUB_KEY, JSON.stringify(data)); } catch (e) {}
+    updateBar();
     toast("Downloaded. Drag its folders into your GitHub repo to publish.");
   }
 
