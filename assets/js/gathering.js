@@ -5,9 +5,16 @@
   const { esc, icons, img, slot, data, editing, save, toast, uid } = GC;
   const K = window.Kitchen;
   const qs = new URLSearchParams(location.search);
-  const gIndex = Math.max(0, data.gatherings.findIndex((x) => x.id === qs.get("g")));
-  const P = "gatherings." + gIndex; // data path prefix for pencils
-  let g = data.gatherings[gIndex];
+  // set once the plans have loaded (online they arrive a moment after the page)
+  let gIndex = 0, P = "gatherings.0", g = null, CAP_KEY = "", CHECK_KEY = "";
+  const C = window.Cloud || null;
+  function pick() {
+    gIndex = data.gatherings.findIndex((x) => x.id === qs.get("g"));
+    if (gIndex < 0 && !qs.get("g")) gIndex = data.gatherings.findIndex((x) => !x._readonly);
+    g = data.gatherings[gIndex] || null; P = "gatherings." + gIndex;
+    if (g) { CAP_KEY = "gc-caption-" + g.id; CHECK_KEY = "gc-checks-" + g.id; }
+    return g;
+  }
 
   const TABS = [["overview", "Overview"], ["itinerary", "Itinerary"], ["kitchen", "Kitchen"], ["recipes", "Recipes"], ["activities", "Activities"], ["market", "Market list"], ["guests", "The Company"], ["scrapbook", "Scrapbook"]];
   if (window.GC_ONLY) { const keep = TABS.filter(([id]) => window.GC_ONLY.includes(id)); TABS.length = 0; keep.forEach((t) => TABS.push(t)); }
@@ -60,13 +67,30 @@
     document.title = g.title + " · Good Company";
     document.querySelector("#crumbs").innerHTML =
       '<div class="wrap"><div class="crumbs"><a href="plan.html#gatherings">gatherings</a><span class="sep">/</span><strong>' + esc(g.title) + "</strong></div>" +
-      '<span class="saved">' + (editing ? "editing in this browser" : "all changes saved") + "</span>" +
+      (C ? (g._readonly ? '<span class="saved ro">view only' + (C.user ? "" : ' · <a href="index.html">log in</a>') + "</span>"
+            : (C.isOwner(g) ? '<button class="vis-toggle' + (g._public ? " on" : "") + '" id="vis" title="who can see this gathering"><span class="vis-dot"></span>' + (g._public ? "public" : "private") + "</button>"
+                            : '<span class="saved">' + (g._public ? "public" : "private") + "</span>") +
+              '<button class="btn ghost" id="invite">' + icons.link.replace('width="30" height="30"', 'width="20" height="20"') + " invite link</button>")
+         : '<span class="saved">' + (editing ? "editing in this browser" : "all changes saved") + "</span>") +
       '<button class="btn ghost" id="share">' + icons.share + " share plan</button>" +
       '<div class="avatars">' + g.guests.slice(0, 4).map((p) => { const pr = p.profileId && window.Auth ? Auth.all().find((x) => x.id === p.profileId) : null; return window.Auth ? Auth.avatar(pr || p, "sm stack") : ""; }).join("") + '<a class="avatar plus" href="#guests">+</a></div></div>';
     document.querySelector("#tabs").innerHTML = '<div class="wrap">' + TABS.map(([id, l]) => '<a class="tab" href="#' + id + '" data-tab="' + id + '">' + l + "</a>").join("") + "</div>";
+    const copy = (url, msg) => (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast(msg), () => window.prompt("Copy this link:", url));
     document.querySelector("#share").addEventListener("click", () => {
-      const u = new URL(location.href); u.searchParams.delete("edit"); u.searchParams.set("g", g.id); u.hash = ""; const url = u.toString();
-      (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(() => toast("Link copied. Anyone with it can see the plan."), () => toast(url));
+      const u = new URL(location.href); ["edit", "join"].forEach((k) => u.searchParams.delete(k)); u.searchParams.set("g", g.id); u.hash = ""; const url = u.toString();
+      copy(url, C ? (g._public ? "Link copied. Anyone with it can see the plan." : "Link copied. Only people in the company can open it — use the invite link to add someone.") : "Link copied.");
+    });
+    const inv = document.querySelector("#invite");
+    if (inv) inv.addEventListener("click", async () => {
+      try { copy(await C.inviteLink(g.id), "Invite link copied. Whoever opens it joins the company for " + g.title + "."); }
+      catch (e) { toast("Couldn't make an invite link. Check your connection."); }
+    });
+    const vis = document.querySelector("#vis");
+    if (vis) vis.addEventListener("click", async () => {
+      const on = !g._public;
+      if (!confirm(on ? "Make " + g.title + " public? Anyone with the link can see it (only the company can edit)." : "Make " + g.title + " private? Only the company will be able to see it.")) return;
+      try { await C.setPublic(g.id, on); g._public = on; shell(); toast(on ? "Public. Anyone with the link can look." : "Private. Just the company."); }
+      catch (e) { toast("Only the person who made this gathering can change that."); }
     });
   }
 
@@ -76,7 +100,6 @@
   /* ---------- hero line: anyone can rewrite it ----------
      In edit mode it changes the plan itself (and ships with "export for GitHub").
      Otherwise it's saved on this device, until shared profiles exist. */
-  const CAP_KEY = "gc-caption-" + g.id;
   function heroCaption() {
     if (editing) return g.heroCaption || "";
     const mine = localStorage.getItem(CAP_KEY);
@@ -189,12 +212,21 @@
     g.activities.forEach((a) => { if (a.day === id) delete a.day; });
     g.days.splice(i, 1); syncDates(); save("Day removed.");
   }
-  function removeGathering() {
+  async function removeGathering() {
+    if (C && !C.isOwner(g)) { // not yours to delete: leave it instead
+      if (!confirm("Leave " + g.title + "? You won't see it anymore unless someone invites you back.")) return;
+      g.guests = g.guests.filter((p) => p.profileId !== C.user.id); save(); await C.flushNow(GC.data);
+      await C.removeMember(g.id, C.user.id);
+      GC.onChange = () => {}; data.gatherings.splice(gIndex, 1);
+      location.href = "plan.html#gatherings"; return;
+    }
     if (!confirm("Delete " + g.title + " entirely? Its itinerary, recipes, activities, people and photos go with it. Recipes and ideas stay in the Recipe Box and Activity Ideas.")) return;
     GC.onChange = () => {}; // nothing left to draw here
     data.gatherings.splice(gIndex, 1); save();
+    if (C) await C.flushNow(GC.data);
     location.href = "plan.html#gatherings";
   }
+
 
   /* ---------- KITCHEN: one countdown per meal ---------- */
   function kitchen(D) {
@@ -285,8 +317,8 @@
   }
 
   /* ---------- MARKET LIST ---------- */
-  const CHECK_KEY = "gc-checks-" + g.id;
-  const getChecks = () => { try { return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}"); } catch (e) { return {}; } };
+  // check-offs live in the plan itself, so the whole company sees what's been bought
+  const getChecks = () => { if (C) return (g.checks = g.checks || {}); try { return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}"); } catch (e) { return {}; } };
   function marketData() {
     const checks = getChecks();
     // the amount is part of the key, so a ticked item comes back if a recipe changes how much you need
@@ -313,7 +345,7 @@
   // in edit mode every field is typed into directly; elsewhere it reads as plain text
   function field(path, value, ph, cls) {
     const v = value || "";
-    if (!editing) return v ? '<span class="' + (cls || "") + '">' + esc(v) + "</span>" : "";
+    if (!editing || (g && g._readonly)) return v ? '<span class="' + (cls || "") + '">' + esc(v) + "</span>" : "";
     return '<span class="inline-edit ' + (cls || "") + '" contenteditable="plaintext-only" spellcheck="false" data-field="' + esc(path) + '" data-ph="' + esc(ph) + '">' + esc(v) + "</span>";
   }
   function guests() {
@@ -354,10 +386,11 @@
   function addFriend(id) {
     const p = Auth.all().find((x) => x.id === id); if (!p) return;
     const same = g.guests.find((x) => !x.profileId && (x.name || "").trim().toLowerCase() === p.name.trim().toLowerCase());
-    if (same) { same.profileId = p.id; same.name = p.name; return save(p.name + " is linked to their profile."); }
+    if (same) { same.profileId = p.id; same.name = p.name; if (C) C.addMember(g.id, p.id).catch(() => {}); return save(p.name + " is linked to their profile."); }
     g.guests.push({ id: uid(), profileId: p.id, name: p.name, doing: "", bringing: "", color: p.color || "tan" });
     if ((+g.people || 0) < g.guests.length) g.people = g.guests.length;
-    save(p.name + " is in the company.");
+    if (C) C.addMember(g.id, p.id).catch(() => toast("Couldn't add " + p.name + " to the company. Try again."));
+    save(p.name + " is in the company. They'll see " + g.title + " when they log in.");
   }
   function newPerson() {
     const colors = ["tan", "ice", "orange"];
@@ -373,6 +406,7 @@
   /* ---------- render ---------- */
   function render() {
     g = GC.data.gatherings[gIndex];
+    if (!g) return;
     // older drafts gave each recipe its own serve time: fold those into meals
     g.recipes.forEach((r) => {
       if (!r.serve || r.meal) return;
@@ -526,7 +560,7 @@
     const jump = t.closest("[data-jump]");
     if (jump) { setTimeout(() => { const el = document.getElementById(jump.dataset.jump); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60); }
     const chk = t.closest("[data-check]");
-    if (chk) { const c = getChecks(); c[chk.dataset.check] = !c[chk.dataset.check]; localStorage.setItem(CHECK_KEY, JSON.stringify(c)); render(); return; }
+    if (chk) { if (g._readonly) return; const c = getChecks(); c[chk.dataset.check] = !c[chk.dataset.check]; if (C) { save(); return; } localStorage.setItem(CHECK_KEY, JSON.stringify(c)); render(); return; }
     const big = t.closest("[data-big]");
     if (big) { const b = g.bigPicture[+big.dataset.big]; b.done = !b.done; save(); return; }
     const bx = t.closest("[data-big-remove]"); if (bx) { g.bigPicture.splice(+bx.dataset.bigRemove, 1); save("Removed."); return; }
@@ -545,7 +579,7 @@
     const dp = t.closest("[data-dishes]"); if (dp) return pickDishes(dp.dataset.dishes);
     if (t.closest('a[href^="#"]')) return;
     const af = t.closest("[data-add-friend]"); if (af) return addFriend(af.dataset.addFriend);
-    const gr = t.closest("[data-guest-remove]"); if (gr) { const p = g.guests[+gr.dataset.guestRemove]; if (confirm("Take " + (p.name || "this person") + " out of the company?")) { g.guests.splice(+gr.dataset.guestRemove, 1); save("Removed."); } return; }
+    const gr = t.closest("[data-guest-remove]"); if (gr) { const p = g.guests[+gr.dataset.guestRemove]; if (confirm("Take " + (p.name || "this person") + " out of the company?" + (p.profileId ? " They won't see " + g.title + " anymore." : ""))) { g.guests.splice(+gr.dataset.guestRemove, 1); if (C && p.profileId && p.profileId !== g._owner) C.removeMember(g.id, p.profileId); save("Removed."); } return; }
     const add = t.closest("[data-add]");
     if (add) {
       const k = add.dataset.add;
@@ -553,7 +587,7 @@
       if (k === "agenda") return editAgenda(null, null);
       if (k === "meal") { editAgenda(null, null); const sel = document.querySelector('.modal [name="kind"]'); if (sel) sel.value = "meal"; return; }
       if (k === "guest") return newPerson();
-      if (k === "gathering") return UI.editForm({ eyebrow: "Good Company", title: "edit gathering", hint: "Add or remove days on the Itinerary.", fields: fields("gathering").filter((f) => f.k !== "dates" && f.k !== "datesLong"), values: g, onSave: (v) => { Object.assign(g, v); save("Saved."); }, onDelete: removeGathering, deleteLabel: "delete this gathering" });
+      if (k === "gathering") return UI.editForm({ eyebrow: "Good Company", title: "edit gathering", hint: "Add or remove days on the Itinerary.", fields: fields("gathering").filter((f) => f.k !== "dates" && f.k !== "datesLong"), values: g, onSave: (v) => { Object.assign(g, v); save("Saved."); }, onDelete: removeGathering, deleteLabel: C && !C.isOwner(g) ? "leave this gathering" : "delete this gathering" });
       if (k === "activity") return addActivity();
       const lists = { activity: g.activities, market: g.market, guest: g.guests };
       return editThing(k, lists[k], null);
@@ -593,6 +627,36 @@
   });
   window.addEventListener("hashchange", () => { showTab(); window.scrollTo({ top: document.querySelector("#tabs").offsetTop - 0, behavior: "instant" }); });
 
-  GC.onChange = render;
-  GC.ready.then(() => { shell(); render(); });
+  function notFound() {
+    document.querySelector("#panels").innerHTML = '<div class="wrap"><div class="snaps-empty" style="margin-top:60px"><p class="hed">this gathering is private</p><p>' +
+      (C && !C.user ? "Log in to see it, if you're part of the company." : "Ask whoever made it for an invite link, or check the link is right.") + '</p><a class="btn" href="' + (C && !C.user ? "index.html" : "plan.html") + '">' + (C && !C.user ? "log in" : "your gatherings") + "</a></div></div>";
+  }
+  async function start() {
+    const code = qs.get("join");
+    if (C && C.user && code && qs.get("g")) {
+      try {
+        const ok = await C.join(qs.get("g"), code);
+        if (!ok) toast("That invite link doesn't work anymore. Ask for a new one.");
+        else {
+          await C.load(GC.data);
+          const gg = GC.data.gatherings.find((x) => x.id === qs.get("g"));
+          if (gg && !gg.guests.some((x) => x.profileId === C.user.id)) { gg.guests.push({ id: uid(), profileId: C.user.id, name: (C.me || {}).name || "", doing: "", bringing: "", color: (C.me || {}).color || "tan" }); }
+          toast("You're in the company. Welcome to the table.");
+        }
+      } catch (e) { toast("Couldn't join just now. Try the link again."); }
+      const u = new URL(location.href); u.searchParams.delete("join"); history.replaceState(null, "", u.toString());
+    }
+    if (!pick()) return notFound();
+    document.body.classList.toggle("readonly", !!g._readonly);
+    if (code && C && C.user) save();
+    shell(); render();
+  }
+  document.addEventListener("click", (e) => {
+    if (!g || !g._readonly) return;
+    if (e.target.closest(".pencil, .made-it, [data-add], [data-add-day], [data-remove-day], [data-add-to-day], [data-remove-item], [data-unschedule], [data-big], [data-big-add], [data-big-remove], [data-check], [data-add-photos], [data-photo-remove], [data-guest-remove], [data-new-person], [data-add-friend], [data-dishes], [data-agenda], .row-x, .day-x")) {
+      e.preventDefault(); e.stopImmediatePropagation(); toast(C && C.user ? "This one's view only. Ask the company for an invite link to help plan." : "Log in and ask for an invite link to help plan.");
+    }
+  }, true);
+  GC.onChange = () => { if (g) render(); };
+  GC.ready.then(start);
 })();

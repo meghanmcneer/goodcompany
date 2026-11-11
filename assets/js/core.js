@@ -1,6 +1,7 @@
 /* ==================================================================
    GOOD COMPANY — core
-   - Edit mode: add ?edit to the URL (stays on until you click "exit").
+   Online (cloud.js loaded): data lives in Supabase and saves itself.
+   Offline fallback below: data lives in this browser + "export for GitHub".
    - Pencils swap images. Swapped images are kept in this browser
      until you "export for GitHub", which downloads a zip with
      the updated content.js + new images, in the same folders as
@@ -20,13 +21,14 @@
   // everything is always editable (except the sign-up screen) — no view mode
   const editing = !document.body.classList.contains("welcome");
 
+  const CLOUD = window.Cloud || null; // online: everything loads from and saves to Supabase
   const clone = (o) => JSON.parse(JSON.stringify(o));
   let draft = null;
-  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {}
-  const data = editing && draft ? draft : clone(BASE);
+  if (!CLOUD) { try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null"); } catch (e) {} }
+  const data = CLOUD ? { site: {}, recipes: [], activities: [], moodboard: [], gatherings: [], profiles: [] } : editing && draft ? draft : clone(BASE);
 
   // links and screenshots used to live inside each gathering; they belong to the mood board now
-  (function moveScrapbooks() {
+  function moveScrapbooks() {
     let moved = false; data.moodboard = data.moodboard || [];
     (data.gatherings || []).forEach((g) => {
       if (Array.isArray(g.scrapbook)) {
@@ -43,7 +45,9 @@
       });
     });
     if (moved && editing && draft) { try { localStorage.setItem(DRAFT_KEY, JSON.stringify(data)); } catch (e) {} }
-  })();
+    return moved;
+  }
+  if (!CLOUD) moveScrapbooks();
 
   // ---------- type settings (tracking, spacing, sizes) ----------
   function applyType(t) {
@@ -138,12 +142,13 @@
         const f = input.files && input.files[0]; if (!f) return resolve(null);
         try {
           const blob = await resizeToBlob(f);
+          if (CLOUD) { toast("Uploading…"); return resolve(await CLOUD.uploadBlob(blob, CLOUD.photoPath(nameHint))); }
           const path = "images/" + slug(nameHint) + "-" + Date.now().toString(36) + ".jpg";
           if (!db) db = await openDB();
           await idb("readwrite", (st) => st.put(blob, path));
           blobs.set(path, URL.createObjectURL(blob));
           resolve(path);
-        } catch (e) { toast("That file didn't load as an image. Try a JPG or PNG."); resolve(null); }
+        } catch (e) { toast(CLOUD ? "That photo didn't upload. Check your connection and try again." : "That file didn't load as an image. Try a JPG or PNG."); resolve(null); }
       };
       input.click();
     });
@@ -160,6 +165,7 @@
         for (const f of files) {
           try {
             const blob = await resizeToBlob(f);
+            if (CLOUD) { toast("Uploading " + (out.length + 1) + " of " + files.length + "…"); out.push(await CLOUD.uploadBlob(blob, CLOUD.photoPath(nameHint))); continue; }
             const path = "images/" + slug(nameHint) + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + ".jpg";
             await idb("readwrite", (st) => st.put(blob, path)); blobs.set(path, URL.createObjectURL(blob)); out.push(path);
           } catch (e) { /* skip anything that isn't a photo */ }
@@ -175,6 +181,7 @@
   let onChange = () => {};
   function save(msg) {
     if (!editing) return;
+    if (CLOUD) { CLOUD.persist(data); if (msg) toast(msg); onChange(); return; }
     localStorage.setItem(DRAFT_KEY, JSON.stringify(data));
     updateBar();
     if (msg) toast(msg);
@@ -270,6 +277,7 @@
   function buildBar() {
     if (!editing) return;
     document.body.classList.add("editing");
+    if (CLOUD) return; // online: changes save on their own, nothing to export
     const bar = document.createElement("div");
     bar.className = "editbar";
     bar.innerHTML = '<span class="lbl">your changes</span><span class="status"></span>' +
@@ -301,7 +309,7 @@
     const path = await pickImage(p.dataset.name || p.dataset.path);
     if (!path) return;
     setPath(data, p.dataset.path, path);
-    save(p.classList.contains("made-it") ? "Looks delicious. Your photo is on the card." : "Image swapped. Export when you're ready to publish.");
+    save(p.classList.contains("made-it") ? "Looks delicious. Your photo is on the card." : "Photo swapped.");
   });
 
   const pencil = (path, name) => '<button class="pencil" type="button" title="swap image" data-path="' + esc(path) + '" data-name="' + esc(name || "") + '">' + icons.pencil + "</button>";
@@ -340,10 +348,13 @@
   }, true);
 
   window.GC = {
-    data, base: BASE, editing, applyType, esc, host, slug, uid, icons, img, slot, pencil, save, toast,
+    data, base: BASE, editing, cloud: CLOUD, applyType, esc, host, slug, uid, icons, img, slot, pencil, save, toast,
     getPath, setPath, pickImage, pickImages, ready: null,
     set onChange(fn) { onChange = fn; }
   };
   document.addEventListener("click", (e) => { if (e.target.closest("[data-start-edit]")) { e.preventDefault(); setEditing(true); } });
-  window.GC.ready = loadImages().then(buildBar);
+  window.GC.ready = CLOUD
+    ? CLOUD.load(data).then(() => { moveScrapbooks(); applyType((data.site || {}).type); buildBar(); CLOUD.onRemote = () => onChange(); })
+        .catch((e) => { console.error(e); toast("Couldn't reach Good Company. Check your connection and refresh."); buildBar(); })
+    : loadImages().then(buildBar);
 })();

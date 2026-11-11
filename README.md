@@ -4,28 +4,27 @@ A planning book for long tables. Plain HTML, CSS and JavaScript with no build st
 
 ## Put it on GitHub (one time, about 5 minutes)
 
-1. Sign in at github.com, click **+ → New repository**, name it `good-company`, set it to **Public**, and click **Create repository**.
+1. Sign in at github.com, click **+ → New repository**, name it `goodcompany`, set it to **Public**, and click **Create repository**.
 2. On the new repo page, click **uploading an existing file**. Drag in everything inside this folder (`index.html`, `gathering.html`, `recipes.html`, `assets`, `images`, `README.md`), then click **Commit changes**.
 3. Go to **Settings → Pages**. Under "Branch," choose **main** and **/ (root)**, then click **Save**.
-4. After a minute or two, the site is live at `https://YOUR-USERNAME.github.io/good-company/`. Anyone can open it without logging in.
+4. After a minute or two, the site is live at your Pages address (meghanmcneer.com/goodcompany).
 
-## Profiles (prototype)
+## Accounts and sharing (Supabase)
 
-The first screen asks people to create a profile (name, email, guest archetype, favorite things, allergies, photo) or log in. After that, home has two choices: **Inspiration** (a placeholder for now) and **Plan a gathering**.
+Everything saves online in Supabase, so it's the same on every phone and computer.
 
-In The Company tab, edit mode lets you search friends' profiles and add them as guests. Their photo, archetype, favorite things and allergies show up automatically.
+- **Accounts.** People sign up with an email and password, confirm their email, then log in. "Forgot your password?" emails a reset link. Change your password from the avatar menu.
+- **Finding friends.** Anyone with an account shows up in The Company search (by name or archetype). Emails are never shown.
+- **Private by default.** A new gathering is visible only to the person who made it and the people in its company. The maker can switch it to **public**, which lets anyone with the link look but not edit.
+- **Sharing.** Add someone from The Company search, or send the **invite link**, which lets them join after logging in. Everyone in the company can edit everything, and changes show up for the others live.
+- **Photos** upload to the `photos` storage bucket.
+- **First login on an old device.** Plans saved in that browser before the site went online (gatherings, Recipe Box, Activity Ideas) move into your account once.
 
-Right now profiles live in each person's browser, so friends you can find are anyone who made a profile on the same device. Making profiles shared between people needs a small backend (Supabase or Firebase, both free to start). Everything in `assets/js/auth.js` is set up to swap that in. Profiles are never included in "export for GitHub," so emails don't end up public.
+Setup lives in `good-company-setup.sql` (run once in the Supabase SQL editor). The site only contains the project URL and the publishable key, which are safe to be public; the rules in the database decide who can see what. Never put the secret/service_role key in these files.
 
 ## Editing
 
-Everything is editable for anyone who's signed in: gatherings, recipes, activities, people, photos and the mood board. Click a pencil to swap a photo, click text to change it, and use the + buttons to add things.
-
-Changes save on that person's device right away. Once something has changed, a small bar appears at the bottom:
-
-- **export for GitHub** downloads `good-company-update.zip`. Unzip it, then on GitHub open the repo, click **Add file → Upload files**, drag in the `assets` and `images` folders, and commit. A minute later the changes are live for everyone.
-- **type** adjusts tracking and spacing.
-- **discard edits** clears this device's changes and shows the live version again.
+Everything is editable for anyone in a gathering's company: gatherings, recipes, activities, people, photos and the mood board. Click a pencil to swap a photo, click text to change it, and use the + buttons to add things. Changes save automatically ("saving… / saved" in the corner).
 
 ## How the kitchen math works
 
@@ -37,6 +36,7 @@ Recipes work best when each step says how long it takes and what temperature it 
 
 ## Files
 
-- `assets/js/content.js`: all the words and recipes. You can also edit this by hand.
+- `assets/js/cloud.js`: the Supabase connection (URL and publishable key at the top).
+- `assets/js/content.js`: starter words and recipes.
 - `images/`: photos.
 - `assets/fonts/`: Paloma.

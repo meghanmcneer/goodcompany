@@ -1152,3 +1152,27 @@ body.editing.has-changes .editbar { display: flex; }
   .site-nav a { color: var(--butter); }
   .site-nav a::after { background: var(--butter); bottom: -4px; height: 2px; }
 }
+.me-menu button.out { color: var(--orange); } .me-menu button:not(.out) { color: var(--brown); border-bottom: 1px solid var(--line); }
+
+/* ---------- online: sign-in bits, save status, privacy ---------- */
+.pw-wrap { position: relative; }
+.pw-wrap input { padding-right: 74px; }
+.pw-eye { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); border: 0; background: none; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--orange); }
+.sent { text-align: center; padding: 20px 0 6px; }
+.sent .hed { font-size: calc(48px * var(--hed-scale, 1)); margin-bottom: 10px; }
+.sent p { color: var(--muted); }
+.cloud-status { position: fixed; right: 16px; bottom: 16px; z-index: 120; background: var(--espresso); color: var(--cream); font-size: 12px; font-weight: 700; letter-spacing: .06em; padding: 7px 12px; border-radius: 30px; opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; }
+.cloud-status[data-state="saving"], .cloud-status[data-state="saved"] { opacity: .9; transform: none; }
+.cloud-status[data-state="error"] { opacity: 1; transform: none; background: var(--neon); }
+.vis-toggle { display: inline-flex; align-items: center; gap: 8px; border: 1.5px solid var(--line); background: var(--cream); padding: 9px 14px; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; margin-left: auto; }
+.vis-toggle .vis-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brown-mid); }
+.vis-toggle.on .vis-dot { background: var(--neon); }
+.vis-toggle:hover { border-color: var(--espresso); }
+.crumbs-bar .saved.ro::before { background: var(--orange); }
+body.readonly .pencil, body.readonly .made-it, body.readonly [data-add], body.readonly .add-day, body.readonly .add-to-day, body.readonly .row-x, body.readonly .day-x,
+body.readonly .big-x, body.readonly .big-add, body.readonly .snap-x, body.readonly .snap-add, body.readonly [data-add-photos], body.readonly .find-friends, body.readonly .guest .more, body.readonly [data-dishes] { display: none !important; }
+@media (max-width: 720px) { .vis-toggle { margin-left: 0; } .cloud-status { bottom: 12px; right: 12px; } }
+
+/* overview recipe previews: just the picture, edit it on the Recipes tab */
+.mini-recipe .pencil, .mini-recipe .ph-row, .mini-recipe .made-it { display: none !important; }
+.mini-recipe { cursor: pointer; }
