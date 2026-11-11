@@ -1,4 +1,4 @@
-/* GOOD COMPANY — site content. Exported 11/10/2026, 10:05:17 PM */
+/* GOOD COMPANY — site content (your edits, exported 11/10/2026) */
 window.GOOD_COMPANY = {
   "site": {
     "name": "Good Company",
@@ -83,48 +83,7 @@ window.GOOD_COMPANY = {
       "serves": 0
     }
   ],
-  "profiles": [
-    {
-      "id": "melinda",
-      "name": "Melinda",
-      "archetype": "host-energy",
-      "color": "ice",
-      "favorites": "a set table, candles lit early, and a very cold glass of something",
-      "allergies": "none"
-    },
-    {
-      "id": "lou",
-      "name": "Lou",
-      "archetype": "cheese-board",
-      "color": "tan",
-      "favorites": "a runny wedge, a good knife, and a long story",
-      "allergies": "tree nuts"
-    },
-    {
-      "id": "bea",
-      "name": "Bea",
-      "archetype": "dish-washer",
-      "color": "orange",
-      "favorites": "hot water, a clean counter, and the quiet after everyone leaves",
-      "allergies": "none"
-    },
-    {
-      "id": "theo",
-      "name": "Theo",
-      "archetype": "closer",
-      "color": "butter",
-      "favorites": "the last bottle, the last slice, the last word",
-      "allergies": "shellfish"
-    },
-    {
-      "id": "june",
-      "name": "June",
-      "archetype": "chatty",
-      "color": "ice",
-      "favorites": "gossip, olives, and anything served in a little dish",
-      "allergies": "gluten"
-    }
-  ],
+  "profiles": [],
   "gatherings": [
     {
       "id": "thanksgiving-vermont",
@@ -346,7 +305,8 @@ window.GOOD_COMPANY = {
         "Set out journals and a tray of paper scraps.",
         "Collage a cover, then trade journals for a page of prompts.",
         "Write or draw a dream to take home."
-      ]
+      ],
+      "category": "craft"
     },
     {
       "id": "walk",
@@ -363,7 +323,8 @@ window.GOOD_COMPANY = {
         "Bundle up right after dessert.",
         "Walk the loop to the end of the road and back.",
         "Second slice is the reward."
-      ]
+      ],
+      "category": "adventure"
     }
   ]
 };
